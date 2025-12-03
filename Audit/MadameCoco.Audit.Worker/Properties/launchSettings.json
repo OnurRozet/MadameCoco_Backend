@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "MadameCoco.Audit.Worker": {
+        "commandName": "Project",
+        "dotnetRunMessages": true,
+        "applicationUrl": "http://localhost:5004",
+        "environmentVariables": {
+            "DOTNET_ENVIRONMENT": "Development"
+        }
+    }
+  }
+}

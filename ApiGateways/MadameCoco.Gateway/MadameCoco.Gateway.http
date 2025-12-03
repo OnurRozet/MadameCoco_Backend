@@ -1,0 +1,6 @@
+@MadameCoco.Gateway_HostAddress = http://localhost:5225
+
+GET {{MadameCoco.Gateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # MSSQL Server
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: madamecoco-mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=MadameCoco_2024!
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - madamcoco_network
+
+  # MongoDB
+  mongo:
+    image: mongo:latest
+    container_name: madamecoco-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - madamcoco_network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: madamecoco-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - madamcoco_network
+
+  # Redis
+  redis:
+    image: redis:latest
+    container_name: madamecoco_redis
+    ports:
+      - "6379:6379"
+    command: redis-server
+    volumes:
+      - redis_data:/data
+    networks:
+      - madamcoco_network
+
+# --- Ana Düzeyde Tanımlar ---
+
+volumes:
+  mssql_data:
+  mongo_data:
+  redis_data:
+
+networks:
+  madamcoco_network:
+    driver: bridge 

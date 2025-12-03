@@ -1,0 +1,39 @@
+﻿{
+    "Routes": [
+        // ----------------------------------------------------------------------
+        // 1. CUSTOMER API YÖNLENDİRMESİ
+        // ----------------------------------------------------------------------
+        {
+            "DownstreamPathTemplate": "/api/customers/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7000 // Customer.API'nin çalıştığı port
+                }
+            ],
+            "UpstreamPathTemplate": "/customers/{everything}", // Dışarıya Açılan URL
+            "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+        },
+
+        // ----------------------------------------------------------------------
+        // 2. ORDER API YÖNLENDİRMESİ
+        // ----------------------------------------------------------------------
+        {
+            "DownstreamPathTemplate": "/api/orders/{everything}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "localhost",
+                    "Port": 7001 // Order.API'nin çalıştığı port
+                }
+            ],
+            "UpstreamPathTemplate": "/orders/{everything}", // Dışarıya Açılan URL
+            "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+        }
+
+    ],
+    "GlobalConfiguration": {
+        "BaseUrl": "http://localhost:5000" // Gateway'in kendi dışarıya açılacağı adres
+    }
+}
