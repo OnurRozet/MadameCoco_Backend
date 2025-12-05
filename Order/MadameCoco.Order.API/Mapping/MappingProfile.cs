@@ -8,7 +8,7 @@ namespace MadameCoco.Order.API.Mapping
         public MappingProfile()
         {
             CreateMap<Entities.Order, OrderResponseDto>().ReverseMap();
-            CreateMap<Entities.Order, OrderItemResponseDto>().ReverseMap();
+            CreateMap<Entities.OrderItem, OrderItemResponseDto>().ReverseMap();
         }
     }
 }

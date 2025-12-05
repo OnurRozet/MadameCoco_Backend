@@ -16,10 +16,20 @@ namespace MadameCoco.Customer.API.Extensions
     {
         public static IServiceCollection AddCustomerServiceDependencies(this IServiceCollection services, IConfiguration configuration)
         {
-            // 1. DB Context Kaydı
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
-            services.AddDbContext<CustomerDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            // 1. DB Context Kaydı (testler için InMemory destekli)
+            var useInMemory = configuration.GetValue<bool>("UseInMemoryDatabase");
+            if (useInMemory)
+            {
+                var dbName = configuration.GetValue<string>("InMemoryDbName") ?? "IntegrationTestDb";
+                services.AddDbContext<CustomerDbContext>(options =>
+                    options.UseInMemoryDatabase(dbName));
+            }
+            else
+            {
+                var connectionString = configuration.GetConnectionString("DefaultConnection");
+                services.AddDbContext<CustomerDbContext>(options =>
+                    options.UseSqlServer(connectionString));
+            }
 
             // 2. İş Servisleri Kaydı
             services.AddScoped<ICustomerService, CustomerService>();

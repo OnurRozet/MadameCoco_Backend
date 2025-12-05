@@ -1,5 +1,6 @@
 using MadameCoco.Customer.API.Data;
 using MadameCoco.Customer.API.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MadameCoco.Customer.API.Services
@@ -19,10 +20,17 @@ namespace MadameCoco.Customer.API.Services
         {
             try
             {
+                // In-memory provider transactions are not supported; return a no-op transaction.
+                if (!customerDb.Database.IsRelational())
+                {
+                    return new NoopDbContextTransaction();
+                }
+
                 if (customerDb.Database.CurrentTransaction is not null)
                 {
                     return customerDb.Database.CurrentTransaction;
                 }
+
                 return await customerDb.Database.BeginTransactionAsync();
             }
             catch (Exception ex)
@@ -58,6 +66,17 @@ namespace MadameCoco.Customer.API.Services
             {
                 throw;
             }
+        }
+
+        private sealed class NoopDbContextTransaction : IDbContextTransaction
+        {
+            public Guid TransactionId => Guid.Empty;
+            public void Commit() { }
+            public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+            public void Dispose() { }
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+            public void Rollback() { }
+            public Task RollbackAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         }
     }
 }

@@ -6,6 +6,7 @@ using MadameCoco.Order.API.Interfaces;
 using MadameCoco.Order.API.Mapping;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace MadameCoco.Order.API.Extensions
 {
@@ -13,9 +14,18 @@ namespace MadameCoco.Order.API.Extensions
     {
         public static IServiceCollection AddOrderServiceDependencies(this IServiceCollection services, IConfiguration configuration)
         {
-            // 1. DB Context Kaydı
-            services.AddDbContext<OrderDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            // 1. DB Context Kaydı (InMemory seçeneği testler için)
+            var useInMemory = configuration.GetValue<bool>("UseInMemoryDatabase");
+            if (useInMemory)
+            {
+                var dbName = configuration.GetValue<string>("InMemoryDbName") ?? "OrderIntegrationTestDb";
+                services.AddDbContext<OrderDbContext>(options => options.UseInMemoryDatabase(dbName));
+            }
+            else
+            {
+                services.AddDbContext<OrderDbContext>(options =>
+                    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            }
 
 
             // 2. CQRS (MediatR) Kaydı

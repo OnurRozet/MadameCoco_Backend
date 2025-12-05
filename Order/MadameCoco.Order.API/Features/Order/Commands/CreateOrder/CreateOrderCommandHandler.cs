@@ -66,7 +66,7 @@ namespace MadameCoco.Order.API.Features.Order.Commands.CreateOrder
               order.Id,
               order.CustomerId,
               order.Items.Select(x => x.ProductId).First(),
-              string.Join(", ", order.Items.Select(x => x.ProductName)), // Fix: Convert List<string> to a single string  
+              string.Join(", ", order.Items.Select(x => x.ProductName)),
               order.Items.Sum(x => x.Quantity),
               order.TotalPrice,
               order.CreatedAt
