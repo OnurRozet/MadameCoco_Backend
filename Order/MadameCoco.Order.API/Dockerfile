@@ -13,6 +13,9 @@ RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj" --ve
 COPY ["Order/MadameCoco.Order.API/", "Order/MadameCoco.Order.API/"]
 COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
 
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj"
+
 # Order.API'yi yayımla (Publish)
 WORKDIR /src/Order/MadameCoco.Order.API
 RUN dotnet publish "MadameCoco.Order.API.csproj" -c Release -o /app/publish --no-restore

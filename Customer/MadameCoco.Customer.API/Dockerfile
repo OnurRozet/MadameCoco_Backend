@@ -13,6 +13,9 @@ RUN dotnet restore "Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csp
 COPY ["Customer/MadameCoco.Customer.API/", "Customer/MadameCoco.Customer.API/"]
 COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
 
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap (cache sorunlarını önlemek için)
+RUN dotnet restore "Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj"
+
 # Customer.API'yi yayımla (Publish)
 WORKDIR /src/Customer/MadameCoco.Customer.API
 RUN dotnet publish "MadameCoco.Customer.API.csproj" -c Release -o /app/publish --no-restore

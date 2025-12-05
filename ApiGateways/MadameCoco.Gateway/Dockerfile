@@ -11,6 +11,9 @@ RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj" --
 # Şimdi sadece Gateway kaynak kodlarını kopyala
 COPY ["ApiGateways/MadameCoco.Gateway/", "ApiGateways/MadameCoco.Gateway/"]
 
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj"
+
 # Gateway'i yayımla (Publish)
 WORKDIR /src/ApiGateways/MadameCoco.Gateway
 RUN dotnet publish "MadameCoco.Gateway.csproj" -c Release -o /app/publish --no-restore

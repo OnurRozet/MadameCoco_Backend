@@ -10,7 +10,7 @@ namespace MadameCoco.Shared.BaseModels
     {
         public T? ResultObject { get; set; }
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         public static ServiceResult<T> Success() => new() { IsSuccess = true };
         public static ServiceResult<T> Success(T result) => new() { ResultObject = result, IsSuccess = true };

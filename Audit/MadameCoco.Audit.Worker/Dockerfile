@@ -13,6 +13,9 @@ RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj
 COPY ["Audit/MadameCoco.Audit.Worker/", "Audit/MadameCoco.Audit.Worker/"]
 COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
 
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj"
+
 # Audit.Worker'yi yayımla (Publish)
 WORKDIR /src/Audit/MadameCoco.Audit.Worker
 RUN dotnet publish "MadameCoco.Audit.Worker.csproj" -c Release -o /app/publish --no-restore
