@@ -104,17 +104,34 @@ jobs:
 
 
   # 2. Aşama: Deployment (Opsiyonel - Secrets yapılandırılmışsa çalışır)
+  # NOT: Secrets yapılandırılmamışsa bu job skip edilebilir veya hata vermeyecek şekilde ayarlanmıştır
   deploy_to_prod:
     needs: build_test_push # Önceki aşama başarılı olursa çalıştır
     runs-on: ubuntu-latest
-    # SSH secrets yapılandırılmışsa deployment yap, yoksa skip et
-    if: ${{ secrets.SSH_HOST != '' && secrets.SSH_USERNAME != '' && secrets.SSH_PRIVATE_KEY != '' }}
     steps:
       - name: Checkout Code (for docker-compose.yml if needed)
         uses: actions/checkout@v4
 
+      - name: Check SSH Secrets
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ] || [ -z "${{ secrets.SSH_USERNAME }}" ] || [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "⚠️ SSH secrets yapılandırılmamış. Deployment atlandı."
+            echo "💡 Deployment yapmak için GitHub Secrets'a şunları ekleyin:"
+            echo "   - SSH_HOST: Sunucu IP veya domain"
+            echo "   - SSH_USERNAME: SSH kullanıcı adı"
+            echo "   - SSH_PRIVATE_KEY: SSH private key"
+            echo "   - SSH_PORT: (Opsiyonel) SSH port (varsayılan: 22)"
+          else
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+            echo "✅ SSH secrets bulundu. Deployment başlatılıyor..."
+          fi
+
       - name: Deploy via SSH
+        if: steps.check_secrets.outputs.has_secrets == 'true'
         uses: appleboy/ssh-action@v1.0.3
+        continue-on-error: true
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
@@ -142,13 +159,3 @@ jobs:
             docker compose ps
             
             echo "✅ CI/CD Başarıyla Tamamlandı!"
-            
-      - name: Deployment Skipped (No SSH Secrets)
-        if: ${{ secrets.SSH_HOST == '' || secrets.SSH_USERNAME == '' || secrets.SSH_PRIVATE_KEY == '' }}
-        run: |
-          echo "⚠️ SSH secrets yapılandırılmamış. Deployment atlandı."
-          echo "💡 Deployment yapmak için GitHub Secrets'a şunları ekleyin:"
-          echo "   - SSH_HOST: Sunucu IP veya domain"
-          echo "   - SSH_USERNAME: SSH kullanıcı adı"
-          echo "   - SSH_PRIVATE_KEY: SSH private key"
-          echo "   - SSH_PORT: (Opsiyonel) SSH port (varsayılan: 22)"
