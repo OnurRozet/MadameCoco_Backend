@@ -8,13 +8,12 @@ COPY ["ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj", "ApiGateways/M
 # Tüm bağımlılıkları restore et
 RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj" --verbosity normal
 
-# Şimdi tüm kaynak kodları kopyala
-COPY . .
+# Şimdi sadece Gateway kaynak kodlarını kopyala
+COPY ["ApiGateways/MadameCoco.Gateway/", "ApiGateways/MadameCoco.Gateway/"]
 
 # Gateway'i yayımla (Publish)
-# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/ApiGateways/MadameCoco.Gateway
-RUN dotnet publish "MadameCoco.Gateway.csproj" -c Release -o /app/publish
+RUN dotnet publish "MadameCoco.Gateway.csproj" -c Release -o /app/publish --no-restore
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

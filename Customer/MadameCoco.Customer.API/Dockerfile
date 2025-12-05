@@ -7,16 +7,15 @@ COPY ["Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj", "Custom
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
 # Tüm bağımlılıkları restore et (Shared dahil)
-# --no-cache kullanarak NuGet cache sorunlarını önle
 RUN dotnet restore "Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj" --verbosity normal
 
-# Şimdi tüm kaynak kodları kopyala
-COPY . .
+# Şimdi sadece Customer.API ve Shared kaynak kodlarını kopyala (diğer projeleri kopyalama)
+COPY ["Customer/MadameCoco.Customer.API/", "Customer/MadameCoco.Customer.API/"]
+COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
 
 # Customer.API'yi yayımla (Publish)
-# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/Customer/MadameCoco.Customer.API
-RUN dotnet publish "MadameCoco.Customer.API.csproj" -c Release -o /app/publish
+RUN dotnet publish "MadameCoco.Customer.API.csproj" -c Release -o /app/publish --no-restore
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
