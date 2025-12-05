@@ -10,6 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot();
+
+// Health Checks - Gateway servisinin sağlık durumunu kontrol etmek için
+builder.Services.AddHealthChecks();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -35,6 +38,13 @@ app.UseHttpsRedirection();
 
 
 app.UseAuthorization();
+
+// Health Check Endpoint'leri - Gateway için basit kontrol
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false // Sadece servisin ayakta olduğunu kontrol et
+});
 
 app.MapControllers();
 

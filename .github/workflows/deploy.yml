@@ -12,6 +12,10 @@ jobs:
   # 1. Aşama: Test ve İmaj Oluşturma/Gönderme
   build_test_push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Repository içeriğini okumak için
+      checks: write    # Test sonuçlarını check run olarak yayınlamak için
+      pull-requests: write  # PR'lara yorum yazmak için
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -21,11 +25,35 @@ jobs:
         with:
           dotnet-version: '9.0.x' # Projenizin .NET sürümünü kontrol edin
 
-      # 💡 YENİ: Unit Testleri Çalıştır
-      - name: Run Unit Tests
+      # 💡 Testleri Çalıştır (Unit + Integration)
+      - name: Run Customer Tests
         run: |
-          dotnet test Customer/MadameCoco.Customer.Tests/MadameCoco.Customer.Tests.csproj --logger trx --results-directory "TestResults/Customer"
-          dotnet test Order/MadameCoco.Order.Tests/MadameCoco.Order.Tests.csproj --logger trx --results-directory "TestResults/Order"
+          dotnet test Customer/MadameCoco.Customer.Tests/MadameCoco.Customer.Tests.csproj \
+            --logger trx \
+            --results-directory "TestResults/Customer" \
+            --collect:"XPlat Code Coverage"
+        continue-on-error: false
+
+      - name: Run Order Tests
+        run: |
+          dotnet test Order/MadameCoco.Order.Tests/MadameCoco.Order.Tests.csproj \
+            --logger trx \
+            --results-directory "TestResults/Order" \
+            --collect:"XPlat Code Coverage"
+        continue-on-error: false
+
+      # Test sonuçlarını yayınla
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          trx_files: |
+            TestResults/**/*.trx
+          check_name: 'Test Results'
+          comment_mode: 'always'
+        permissions:
+          checks: write  # Check run oluşturmak için gerekli
+          pull-requests: write  # PR'lara yorum yazmak için gerekli
           
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -40,7 +68,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/Services/MadameCoco.Customer.API/Dockerfile
+          file: Customer/MadameCoco.Customer.API/Dockerfile
           push: true
           tags: ${{ env.DOCKER_REPO }}-customer-api:latest
 
@@ -49,27 +77,27 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/Services/MadameCoco.Order.API/Dockerfile
+          file: Order/MadameCoco.Order.API/Dockerfile
           push: true
           tags: ${{ env.DOCKER_REPO }}-order-api:latest
           
-      # ... (Audit.Worker ve Ocelot için de aynı build/push adımları tekrarlanır) ...
-          
+      # Audit.Worker
       - name: Build and Push Audit.Worker
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/Services/MadameCoco.Audit.Worker/Dockerfile
+          file: Audit/MadameCoco.Audit.Worker/Dockerfile
           push: true
           tags: ${{ env.DOCKER_REPO }}-audit-worker:latest
           
-      - name: Build and Push Ocelot.Gateway
+      # Gateway
+      - name: Build and Push Gateway
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/APIGateways/MadameCoco.Gateway/Dockerfile
+          file: ApiGateways/MadameCoco.Gateway/Dockerfile
           push: true
-          tags: ${{ env.DOCKER_REPO }}-ocelot-gateway:latest
+          tags: ${{ env.DOCKER_REPO }}-gateway:latest
 
 
   # 2. Aşama: Sanal Dağıtım (Continuous Deployment)
