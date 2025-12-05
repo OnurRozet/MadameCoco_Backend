@@ -2,19 +2,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Proje dosyalarını kopyala
+# Önce sadece proje dosyalarını kopyala (Docker cache için önemli)
 COPY ["Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj", "Customer/MadameCoco.Customer.API/"]
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj"
+# Tüm bağımlılıkları restore et (Shared dahil)
+# --no-cache kullanarak NuGet cache sorunlarını önle
+RUN dotnet restore "Customer/MadameCoco.Customer.API/MadameCoco.Customer.API.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
+# Şimdi tüm kaynak kodları kopyala
 COPY . .
 
 # Customer.API'yi yayımla (Publish)
+# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/Customer/MadameCoco.Customer.API
-RUN dotnet publish "MadameCoco.Customer.API.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "MadameCoco.Customer.API.csproj" -c Release -o /app/publish
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

@@ -5,15 +5,16 @@ WORKDIR /src
 # Proje dosyalarını kopyala
 COPY ["ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj", "ApiGateways/MadameCoco.Gateway/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj"
+# Tüm bağımlılıkları restore et
+RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
+# Şimdi tüm kaynak kodları kopyala
 COPY . .
 
 # Gateway'i yayımla (Publish)
+# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/ApiGateways/MadameCoco.Gateway
-RUN dotnet publish "MadameCoco.Gateway.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "MadameCoco.Gateway.csproj" -c Release -o /app/publish
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

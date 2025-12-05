@@ -6,15 +6,16 @@ WORKDIR /src
 COPY ["Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj", "Order/MadameCoco.Order.API/"]
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj"
+# Tüm bağımlılıkları restore et (Shared dahil)
+RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
+# Şimdi tüm kaynak kodları kopyala
 COPY . .
 
 # Order.API'yi yayımla (Publish)
+# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/Order/MadameCoco.Order.API
-RUN dotnet publish "MadameCoco.Order.API.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "MadameCoco.Order.API.csproj" -c Release -o /app/publish
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

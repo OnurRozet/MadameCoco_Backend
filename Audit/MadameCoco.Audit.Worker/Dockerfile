@@ -6,15 +6,16 @@ WORKDIR /src
 COPY ["Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj", "Audit/MadameCoco.Audit.Worker/"]
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj"
+# Tüm bağımlılıkları restore et (Shared dahil)
+RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
+# Şimdi tüm kaynak kodları kopyala
 COPY . .
 
 # Audit.Worker'yi yayımla (Publish)
+# Restore tekrar yapılsın ki tüm paketler kesinlikle mevcut olsun
 WORKDIR /src/Audit/MadameCoco.Audit.Worker
-RUN dotnet publish "MadameCoco.Audit.Worker.csproj" -c Release -o /app/publish --no-restore
+RUN dotnet publish "MadameCoco.Audit.Worker.csproj" -c Release -o /app/publish
 
 # 2. Aşama: Final (Çalışma Ortamı)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
