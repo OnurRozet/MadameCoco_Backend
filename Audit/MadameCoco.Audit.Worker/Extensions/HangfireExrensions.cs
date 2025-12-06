@@ -3,6 +3,7 @@
 using Hangfire.Redis.StackExchange;
 using MadameCoco.Audit.Worker.Interfaces;
 using MadameCoco.Audit.Worker.Services;
+using Microsoft.AspNetCore.Builder;
 // ... diğer using'ler ...  
 
 public static class HangfireExtensions
@@ -26,34 +27,56 @@ public static class HangfireExtensions
                 Prefix = "madamecoco:audit:hangfire:",
                 // Önemli: Redis'te görevlerin kalıcı olmasını sağlar (Redis ayarlarıyla da ilgili)  
                 InvisibilityTimeout = TimeSpan.FromHours(5)
-            }));
+            })
+        );
 
         services.AddHangfireServer();
 
         return services;
     }
 
-    public static IHost ConfigureHangfireRecurringJobs(this IHost host)
+    public static WebApplication ConfigureRecurringJobs(this WebApplication app)
     {
-        using (var scope = host.Services.CreateScope())
+        using (var scope = app.Services.CreateScope())
         {
-            // 💡 Interface üzerinden servisi çağırıyoruz.  
-            var reportingService = scope.ServiceProvider.GetRequiredService<ILogReportingService>();
+            var manager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
 
-            // 💡 DELAYED (TEKRARLAYAN) GÖREV TANIMLAMA 💡  
-            // Şimdilik 1 dakikada bir çalışacak Cron ifadesini kullanıyoruz.  
-            RecurringJob.AddOrUpdate<ILogReportingService>(
-                "TestDailyLogReport",
+            var options = new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            };
+
+            manager.AddOrUpdate<ILogReportingService>(
+                "DailyLogReport_10AM",
                 service => service.SendDailyReportAsync(),
-                "*/1 * * * *", // Cron: Her 1 dakikada bir (Test amaçlı)  
-                new RecurringJobOptions
-                {
-                    TimeZone = TimeZoneInfo.Utc
-                }
+                "0/1 * * * *",
+                options
             );
-
-            // NOT: Günlük 03:00 için Cron ifadesi: "0 3 * * *" olmalıdır.  
         }
-        return host;
+        return app;
     }
+
+    //public static IHost ConfigureHangfireRecurringJobs(this IHost host)
+    //{
+    //    using (var scope = host.Services.CreateScope())
+    //    {
+    //        //Interface üzerinden servisi çağırıyoruz.  
+    //        var reportingService = scope.ServiceProvider.GetRequiredService<ILogReportingService>();
+
+    //        // DELAYED (TEKRARLAYAN) GÖREV TANIMLAMA 
+    //        // Şimdilik 1 dakikada bir çalışacak Cron ifadesini kullanıyoruz.  
+    //        RecurringJob.AddOrUpdate<ILogReportingService>(
+    //            "TestDailyLogReport",
+    //            service => service.SendDailyReportAsync(),
+    //            "*/1 * * * *", // Cron: Her 1 dakikada bir (Test amaçlı)  
+    //            new RecurringJobOptions
+    //            {
+    //                TimeZone = TimeZoneInfo.Utc
+    //            }
+    //        );
+
+    //        // NOT: Günlük 03:00 için Cron ifadesi: "0 3 * * *" olmalıdır.  
+    //    }
+    //    return host;
+    //}
 }

@@ -40,7 +40,7 @@ namespace MadameCoco.Audit.Worker.Services
 
             if (recentLogs.Count > 0)
             {
-                var (subject, body) = _emailService.FormatReport(recentLogs, DateTime.Now);
+                var (subject, body) = _emailService.EmailTemplate(recentLogs, DateTime.Now);
 
                 await _emailService.SendEmailAsync(subject, body);
 

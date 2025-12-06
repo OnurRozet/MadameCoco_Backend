@@ -44,5 +44,54 @@ namespace MadameCoco.Customer.API.Extensions
 
             return services;
         }
+
+        public static IServiceCollection AddCustomerServiceHealthCheckConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHealthChecks()
+               .AddDbContextCheck<MadameCoco.Customer.API.Data.CustomerDbContext>(
+                name: "database",
+                tags: new[] { "db", "sql", "ready" }
+               );
+
+            return services;
+        }
+
+        public static IServiceCollection AddControllersConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddControllers(options =>
+            {
+                options.RespectBrowserAcceptHeader = true;
+                options.ReturnHttpNotAcceptable = true;
+            })
+             .AddJsonOptions(options =>
+             {
+                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+             });
+            services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true;
+            });
+
+            return services;
+        }
+
+        public static WebApplication AddHealthCheckEndpoints(this WebApplication app)
+        {
+            // /health - Genel sağlık durumu (hızlı kontrol)
+            // /health/ready - Servis hazır mı? (database bağlantısı dahil)
+            // /health/live - Servis çalışıyor mu? (basit kontrol)
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready")
+            });
+            app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = _ => false // Hiçbir check çalıştırma, sadece servisin ayakta olduğunu kontrol et
+            });
+
+            return app;
+        }
     }
+
 }

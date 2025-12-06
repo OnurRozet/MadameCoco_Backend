@@ -10,6 +10,7 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -46,14 +47,13 @@ namespace MadameCoco.Audit.Worker.Extensions
             // 1. Raporlama Servisini Interface ile Kaydetme  
             services.AddScoped<ILogReportingService, LogReportingService>();
 
-            // 💡 2. YENİ HANGFIRE KURULUMU (REDIS) 💡  
+            // 2.HANGFIRE KURULUMU (REDIS)  
             var redisConnection = configuration.GetConnectionString("RedisConnection");
 
             services.AddHangfire(config => config
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseRecommendedSerializerSettings()
                 .UseSimpleAssemblyNameTypeSerializer()
-                // 💡 Redis Depolamasını Kullan  
                 .UseRedisStorage(redisConnection, new RedisStorageOptions
                 {
                     // Görevlerin Redis'te saklanacağı anahtarın ön eki  
@@ -66,30 +66,6 @@ namespace MadameCoco.Audit.Worker.Extensions
 
             return services;
         }
-
-        public static WebApplication ConfigureRecurringJobs(this WebApplication app)
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                // RecurringJob.AddOrUpdate for IRecurringJobManager using the updated method signature  
-                var manager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-
-                // Updated to use RecurringJobOptions  
-                var options = new RecurringJobOptions
-                {
-                    TimeZone = TimeZoneInfo.Utc
-                };
-
-                manager.AddOrUpdate<ILogReportingService>(
-                    "DailyLogReport_10AM",
-                    service => service.SendDailyReportAsync(),
-                    "0/1 * * * *",
-                    options
-                );
-            }
-            return app;
-        }
-
         public static IServiceCollection AddMassTransitWorker(this IServiceCollection services, IConfiguration configuration)
         {
             // MASSTRANSIT VE CONSUMER KAYDI
@@ -117,6 +93,46 @@ namespace MadameCoco.Audit.Worker.Extensions
             });
 
             return services;
+        }
+        public static IServiceCollection AddMongoAndRabbitMqHealtCheckConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var mongoConnectionString = configuration["MongoDbSettings:ConnectionString"];
+            var rabbitMqHost = configuration["RabbitMQ:Host"] ?? "localhost";
+            var rabbitMqUser = configuration["RabbitMQ:User"] ?? "guest";
+            var rabbitMqPass = configuration["RabbitMQ:Pass"] ?? "guest";
+
+            string[] MongoDbTags = new[] { "db", "mongodb", "ready" };
+            string[] RabbitMqTags = new[] { "queue", "rabbitmq", "ready" };
+
+            services.AddHealthChecks()
+              .AddMongoDb(
+                  sp => sp.GetRequiredService<IMongoClient>(),
+                  name: "mongodb",
+                  tags: MongoDbTags
+              )
+              .AddRabbitMQ(
+                 sp => new RabbitMQ.Client.ConnectionFactory
+                 {
+                     Uri = new Uri($"amqp://{rabbitMqUser}:{rabbitMqPass}@{rabbitMqHost}/")
+                 }.CreateConnectionAsync(), // Fix: Provide a factory function to resolve RabbitMQ connection  
+                 name: "rabbitmq",
+                 tags: RabbitMqTags
+              );
+
+            return services;
+        }
+        public static WebApplication AddHealthCheckEndpoints(this WebApplication app)
+        {
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready")
+            });
+            app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = _ => false
+            });
+            return app;
         }
     }
 }

@@ -22,6 +22,6 @@ public class OrderLog
 
     public decimal TotalPrice { get; set; }
 
-    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
     public DateTime CreatedAt { get; set; }
 }
