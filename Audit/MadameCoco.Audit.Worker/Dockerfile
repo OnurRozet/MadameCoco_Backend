@@ -6,11 +6,15 @@ WORKDIR /src
 COPY ["Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj", "Audit/MadameCoco.Audit.Worker/"]
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj"
+# Tüm bağımlılıkları restore et (Shared dahil)
+RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
-COPY . .
+# Şimdi sadece Audit.Worker ve Shared kaynak kodlarını kopyala
+COPY ["Audit/MadameCoco.Audit.Worker/", "Audit/MadameCoco.Audit.Worker/"]
+COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
+
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "Audit/MadameCoco.Audit.Worker/MadameCoco.Audit.Worker.csproj"
 
 # Audit.Worker'yi yayımla (Publish)
 WORKDIR /src/Audit/MadameCoco.Audit.Worker

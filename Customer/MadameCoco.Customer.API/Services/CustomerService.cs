@@ -53,7 +53,7 @@ namespace MadameCoco.Customer.API.Services
             var customer = await uow.CustomerRepository.FindAsync(id);
             if (customer is null) return ServiceResult<bool>.Error("Belirtilen id ye ait müşteri bulunamadı");
             uow.CustomerRepository.Delete(customer);
-            return ServiceResult<bool>.Success(true,"Başarılı şekilde silindi.");
+            return ServiceResult<bool>.Success(true, "Başarılı şekilde silindi.");
         }
 
         public async Task<ServiceResult<DetailListResponse<CustomerResponseDto>>> GetAllAsync()

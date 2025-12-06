@@ -72,7 +72,7 @@ namespace MadameCoco.Order.API.Features.Order.Commands.CreateOrder
               order.CreatedAt
             ), cancellationToken);
 
-            return ServiceResult<Guid>.Success(order.Id);
+            return ServiceResult<Guid>.Success(order.Id,"Sipariş başarılı şekilde oluşturulmuştur.");
         }
     }
 }

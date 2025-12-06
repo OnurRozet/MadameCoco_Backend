@@ -9,7 +9,7 @@ namespace MadameCoco.Customer.API.Services
     /// <summary>
     /// Customer mikroservisine özel generic repository implementasyonu.
     /// </summary>
-    public class Repository<T>(CustomerDbContext context) : IRepository<T> where T : BaseEntity
+    public class Repository<T>(CustomerDbContext context) : IRepository<T> where T : BaseEntity,new()
     {
         public async Task CreateAsync(T entity)
         {

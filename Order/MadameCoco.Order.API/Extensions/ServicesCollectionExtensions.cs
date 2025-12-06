@@ -39,7 +39,39 @@ namespace MadameCoco.Order.API.Extensions
             // 4. AutoMapper - Sadece belirli Profile tipini kullan (assembly taraması yapmaz)
             services.AddAutoMapper(typeof(MappingProfile));
 
-            // 5. RabbitMQ (MassTransit) Kaydı
+
+            // 6. Customer Client Kaydı (HttpClientFactory)
+            services.AddHttpClient<ICustomerClient, CustomerClient>(client =>
+            {
+                // Bu BaseAddress, genellikle API Gateway'in Customer API'ye yönlendirdiği adres olmalıdır.
+                // Örnek: "http://customer.api.internal/" veya Development ortamında
+                client.BaseAddress = new Uri(configuration["ServiceUrls:CustomerApi"] ?? "http://localhost:5000");
+            });
+
+            return services;
+        }
+
+        public static IServiceCollection AddControllersConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddControllers(options =>
+            {
+                options.RespectBrowserAcceptHeader = true;
+                options.ReturnHttpNotAcceptable = true;
+            })
+             .AddJsonOptions(options =>
+             {
+                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+             });
+            services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true;
+            });
+
+            return services;
+        }
+
+        public static IServiceCollection AddMassTransitConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
             services.AddMassTransit(x =>
             {
                 x.AddConsumers(typeof(ServicesCollectionExtensions).Assembly);
@@ -60,15 +92,33 @@ namespace MadameCoco.Order.API.Extensions
                 });
             });
 
-            // 6. Customer Client Kaydı (HttpClientFactory)
-            services.AddHttpClient<ICustomerClient, CustomerClient>(client =>
-            {
-                // Bu BaseAddress, genellikle API Gateway'in Customer API'ye yönlendirdiği adres olmalıdır.
-                // Örnek: "http://customer.api.internal/" veya Development ortamında
-                client.BaseAddress = new Uri(configuration["ServiceUrls:CustomerApi"] ?? "http://localhost:5000");
-            });
+            return services;
+        }
+
+        public static IServiceCollection AddHealthCheckConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHealthChecks()
+              .AddDbContextCheck<MadameCoco.Order.API.Data.OrderDbContext>(
+               name: "database",
+               tags: new[] { "db", "sql", "ready" }
+              );
 
             return services;
         }
+
+        public static WebApplication AddHealthCheckEndpoints(this WebApplication app) {
+            app.MapHealthChecks("/health");
+            app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready")
+            });
+            app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            {
+                Predicate = _ => false
+            });
+
+            return app;
+        }
+
     }
 }

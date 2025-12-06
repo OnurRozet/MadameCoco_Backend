@@ -10,6 +10,6 @@ namespace MadameCoco.Audit.Worker.Interfaces
     public interface IEmailService
     {
         Task SendEmailAsync(string subject, string body);
-        (string Subject, string Body) FormatReport(List<OrderLog> logs, DateTime reportDate);
+        (string Subject, string Body) EmailTemplate(List<OrderLog> logs, DateTime reportDate);
     }
 }

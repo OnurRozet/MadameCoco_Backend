@@ -7,12 +7,13 @@ namespace MadameCoco.Customer.API.Data
     {
         public CustomerDbContext CreateDbContext(string[] args)
         {
-            //IConfigurationRoot configuration = new ConfigurationBuilder()
-            //.SetBasePath(Directory.GetCurrentDirectory())
-            //.AddJsonFile("appsettings.json")
-            //.Build();
+            var configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-            var connectionString = "Server=localhost,1433;Database=MadameCoco_CustomerDb;User Id=sa;Password=MadameCoco_2024!;TrustServerCertificate=True;";
+            //var connectionString = "Server=localhost,1433;Database=MadameCoco_CustomerDb;User Id=sa;Password=MadameCoco_2024!;TrustServerCertificate=True;";
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrEmpty(connectionString))
             {

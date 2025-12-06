@@ -6,11 +6,15 @@ WORKDIR /src
 COPY ["Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj", "Order/MadameCoco.Order.API/"]
 COPY ["Shared/MadameCoco.Shared/MadameCoco.Shared.csproj", "Shared/MadameCoco.Shared/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj"
+# Tüm bağımlılıkları restore et (Shared dahil)
+RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
-COPY . .
+# Şimdi sadece Order.API ve Shared kaynak kodlarını kopyala
+COPY ["Order/MadameCoco.Order.API/", "Order/MadameCoco.Order.API/"]
+COPY ["Shared/MadameCoco.Shared/", "Shared/MadameCoco.Shared/"]
+
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "Order/MadameCoco.Order.API/MadameCoco.Order.API.csproj"
 
 # Order.API'yi yayımla (Publish)
 WORKDIR /src/Order/MadameCoco.Order.API

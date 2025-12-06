@@ -20,7 +20,7 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    public (string Subject, string Body) FormatReport(List<OrderLog> logs, DateTime reportDate)
+    public (string Subject, string Body) EmailTemplate(List<OrderLog> logs, DateTime reportDate)
     {
         var totalCount = logs.Count;
         var totalRevenue = logs.Sum(l => l.TotalPrice);
@@ -51,7 +51,7 @@ public class EmailService : IEmailService
                 <th>Olay Tipi</th>
                 <th>Adet</th>
                 <th>Toplam Tutar</th>
-                <th>Oluşturulma Zamanı (UTC)</th>
+                <th>Oluşturulma Zamanı</th>
             </tr>
         """);
 

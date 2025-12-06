@@ -27,19 +27,23 @@ jobs:
 
       # 💡 Testleri Çalıştır (Unit + Integration)
       - name: Run Customer Tests
+        id: customer_tests
         run: |
           dotnet test Customer/MadameCoco.Customer.Tests/MadameCoco.Customer.Tests.csproj \
-            --logger trx \
-            --results-directory "TestResults/Customer" \
-            --collect:"XPlat Code Coverage"
+            --logger "trx;LogFileName=CustomerTests.trx" \
+            --results-directory "${{ github.workspace }}/TestResults/Customer" \
+            --collect:"XPlat Code Coverage" \
+            --verbosity normal
         continue-on-error: false
 
       - name: Run Order Tests
+        id: order_tests
         run: |
           dotnet test Order/MadameCoco.Order.Tests/MadameCoco.Order.Tests.csproj \
-            --logger trx \
-            --results-directory "TestResults/Order" \
-            --collect:"XPlat Code Coverage"
+            --logger "trx;LogFileName=OrderTests.trx" \
+            --results-directory "${{ github.workspace }}/TestResults/Order" \
+            --collect:"XPlat Code Coverage" \
+            --verbosity normal
         continue-on-error: false
 
       # Test sonuçlarını yayınla
@@ -48,12 +52,11 @@ jobs:
         if: always()
         with:
           trx_files: |
-            TestResults/**/*.trx
+            TestResults/Customer/**/*.trx
+            TestResults/Order/**/*.trx
           check_name: 'Test Results'
           comment_mode: 'always'
-        permissions:
-          checks: write  # Check run oluşturmak için gerekli
-          pull-requests: write  # PR'lara yorum yazmak için gerekli
+          report_individual_runs: true
           
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -100,32 +103,59 @@ jobs:
           tags: ${{ env.DOCKER_REPO }}-gateway:latest
 
 
-  # 2. Aşama: Sanal Dağıtım (Continuous Deployment)
+  # 2. Aşama: Deployment (Opsiyonel - Secrets yapılandırılmışsa çalışır)
+  # NOT: Secrets yapılandırılmamışsa bu job skip edilebilir veya hata vermeyecek şekilde ayarlanmıştır
   deploy_to_prod:
     needs: build_test_push # Önceki aşama başarılı olursa çalıştır
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH (Simulated)
+      - name: Checkout Code (for docker-compose.yml if needed)
+        uses: actions/checkout@v4
+
+      - name: Check SSH Secrets
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.SSH_HOST }}" ] || [ -z "${{ secrets.SSH_USERNAME }}" ] || [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "⚠️ SSH secrets yapılandırılmamış. Deployment atlandı."
+            echo "💡 Deployment yapmak için GitHub Secrets'a şunları ekleyin:"
+            echo "   - SSH_HOST: Sunucu IP veya domain"
+            echo "   - SSH_USERNAME: SSH kullanıcı adı"
+            echo "   - SSH_PRIVATE_KEY: SSH private key"
+            echo "   - SSH_PORT: (Opsiyonel) SSH port (varsayılan: 22)"
+          else
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+            echo "✅ SSH secrets bulundu. Deployment başlatılıyor..."
+          fi
+
+      - name: Deploy via SSH
+        if: steps.check_secrets.outputs.has_secrets == 'true'
         uses: appleboy/ssh-action@v1.0.3
+        continue-on-error: true
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          timeout: 30s
+          command_timeout: 5m
           # Sunucuda çalışacak komutlar
           script: |
-            echo "Dağıtım süreci başlatılıyor..."
+            echo "🚀 Dağıtım süreci başlatılıyor..."
             
-            # --- Sunucu Ortamının Simülasyonu ---
             # 1. Proje klasörüne git
-            cd /var/www/madamecoco-prod
+            cd /var/www/madamecoco-prod || { echo "❌ Proje klasörü bulunamadı!"; exit 1; }
             
             # 2. Yeni imajları Container Registry'den (Docker Hub) çek
-            echo "Yeni Docker imajları çekiliyor: docker compose pull"
-            docker compose pull
+            echo "📥 Yeni Docker imajları çekiliyor..."
+            docker compose pull || { echo "⚠️ Docker compose pull başarısız, devam ediliyor..."; }
             
             # 3. Servisleri yeniden başlat ve eski konteynerleri temizle
-            echo "Servisler yeniden başlatılıyor: docker compose up -d"
-            docker compose up -d --remove-orphans 
+            echo "🔄 Servisler yeniden başlatılıyor..."
+            docker compose up -d --remove-orphans || { echo "❌ Docker compose up başarısız!"; exit 1; }
             
-            echo "CI/CD Başarıyla Tamamlandı: Kod, ${deployment_user} tarafından canlı ortama gönderildi."
-            # -------------------------------------
+            # 4. Container durumunu kontrol et
+            echo "✅ Container durumu:"
+            docker compose ps
+            
+            echo "✅ CI/CD Başarıyla Tamamlandı!"

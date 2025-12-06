@@ -5,11 +5,14 @@ WORKDIR /src
 # Proje dosyalarını kopyala
 COPY ["ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj", "ApiGateways/MadameCoco.Gateway/"]
 
-# Gerekli tüm projeleri restore et
-RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj"
+# Tüm bağımlılıkları restore et
+RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj" --verbosity normal
 
-# Tüm proje dosyalarını kopyala
-COPY . .
+# Şimdi sadece Gateway kaynak kodlarını kopyala
+COPY ["ApiGateways/MadameCoco.Gateway/", "ApiGateways/MadameCoco.Gateway/"]
+
+# Kaynak kodlar kopyalandıktan sonra restore'u tekrar yap
+RUN dotnet restore "ApiGateways/MadameCoco.Gateway/MadameCoco.Gateway.csproj"
 
 # Gateway'i yayımla (Publish)
 WORKDIR /src/ApiGateways/MadameCoco.Gateway
